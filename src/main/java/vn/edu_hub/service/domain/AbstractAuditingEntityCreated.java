@@ -1,0 +1,32 @@
+package vn.edu_hub.service.domain;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import jakarta.persistence.Column;
+import jakarta.persistence.EntityListeners;
+import jakarta.persistence.MappedSuperclass;
+import lombok.Getter;
+import lombok.Setter;
+import org.springframework.data.annotation.CreatedBy;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+
+import java.io.Serial;
+import java.io.Serializable;
+
+/**
+ * Base abstract class for entities which will hold definitions for created, last modified, created by,
+ * last modified by attributes.
+ */
+@MappedSuperclass
+@EntityListeners(AuditingEntityListener.class)
+@Getter
+@Setter
+public abstract class AbstractAuditingEntityCreated extends AbstractAuditingDateCreated implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
+
+    @CreatedBy
+    @Column(name = "created_by", nullable = false, updatable = false)
+    @JsonIgnore
+    private Long createdBy;
+}
