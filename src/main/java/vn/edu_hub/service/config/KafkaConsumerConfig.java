@@ -11,7 +11,7 @@ import org.springframework.kafka.config.KafkaListenerContainerFactory;
 import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.listener.ConcurrentMessageListenerContainer;
-import org.springframework.kafka.support.serializer.JacksonJsonDeserializer;
+import org.springframework.kafka.support.serializer.JsonDeserializer;
 import vn.edu_hub.service.constants.KafkaConfigConstants;
 
 import java.util.HashMap;
@@ -49,14 +49,14 @@ public class KafkaConsumerConfig {
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
 
         //value là json => deserialize thành object java
-        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JacksonJsonDeserializer.class);
+        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
 
         //cho phép deserialize(giải mã) bất kỳ package nào
-        props.put(JacksonJsonDeserializer.TRUSTED_PACKAGES, true);
+        props.put(JsonDeserializer.TRUSTED_PACKAGES, true);
 
         // không dùng header để lưu tên class -> giả mã dựa vào Object.class
-        props.put(JacksonJsonDeserializer.USE_TYPE_INFO_HEADERS, false);
-        props.put(JacksonJsonDeserializer.REMOVE_TYPE_INFO_HEADERS, false);
+        props.put(JsonDeserializer.USE_TYPE_INFO_HEADERS, false);
+        props.put(JsonDeserializer.REMOVE_TYPE_INFO_HEADERS, false);
         return props;
     }
 
@@ -66,7 +66,7 @@ public class KafkaConsumerConfig {
         return new DefaultKafkaConsumerFactory<>(
                 consumerProps(),
                 new StringDeserializer(),
-                new JacksonJsonDeserializer<>(Object.class, false));
+                new JsonDeserializer<>(Object.class, false));
     }
 
     //bean quan trọng nhất, tạo container factory mà spring kafka dùng để quản lý các @KafkaListener
