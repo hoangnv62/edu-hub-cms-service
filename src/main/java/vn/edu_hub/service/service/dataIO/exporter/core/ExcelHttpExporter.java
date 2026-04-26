@@ -1,53 +1,54 @@
 package vn.edu_hub.service.service.dataIO.exporter.core;
 
 import jakarta.servlet.http.HttpServletResponse;
-import lombok.AccessLevel;
-import lombok.RequiredArgsConstructor;
-import lombok.experimental.FieldDefaults;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.stream.Stream;
 
 /**
- * Chuyển đổi bất kỳ {@link ExcelExporter} nào để ghi trực tiếp vào HTTP response.
+ * Tiện ích xuất Excel qua HTTP response.
  * Tuân thủ SRP: tách biệt logic truyền tải HTTP khỏi logic tạo Excel.
- *
- * @param <T> kiểu dữ liệu của mỗi dòng
  */
-@RequiredArgsConstructor
-@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
-public class ExcelHttpExporter<T> {
+public class ExcelHttpExporter {
 
     private static final String CONTENT_TYPE =
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
-    ExcelExporter<T> excelExporter;
-
-    public void export(List<T> data, String fileName, HttpServletResponse response) throws IOException {
+    /**
+     * Xuất dữ liệu theo batch ra HTTP response.
+     */
+    public <T> void export(IBatchExcelExporter<T> exporter, List<T> data,
+                           String fileName, HttpServletResponse response) throws IOException {
         prepareResponse(fileName, response);
         try (OutputStream out = response.getOutputStream()) {
-            excelExporter.export(data, out);
+            exporter.export(data, out);
             out.flush();
         }
     }
 
     /**
-     * Xuất dữ liệu ra HTTP response theo stream. Phù hợp cho tập dữ liệu lớn.
+     * Xuất dữ liệu theo stream ra HTTP response. Phù hợp cho tập dữ liệu lớn.
      */
-    public void export(Stream<T> dataStream, String fileName, HttpServletResponse response) throws IOException {
+    public <T> void export(IStreamingExcelExporter<T> exporter, Stream<T> dataStream,
+                           String fileName, HttpServletResponse response) throws IOException {
         prepareResponse(fileName, response);
         try (OutputStream out = response.getOutputStream()) {
-            excelExporter.export(dataStream, out);
+            exporter.export(dataStream, out);
             out.flush();
         }
     }
 
     private void prepareResponse(String fileName, HttpServletResponse response) {
         String safeFileName = sanitizeFileName(fileName);
+        String encodedFileName = URLEncoder.encode(safeFileName, StandardCharsets.UTF_8)
+                .replace("+", "%20");
         response.setContentType(CONTENT_TYPE);
-        response.setHeader("Content-Disposition", "attachment; filename=\"" + safeFileName + "\"");
+        response.setHeader("Content-Disposition",
+                "attachment; filename=\"" + safeFileName + "\"; filename*=UTF-8''" + encodedFileName);
     }
 
     /**

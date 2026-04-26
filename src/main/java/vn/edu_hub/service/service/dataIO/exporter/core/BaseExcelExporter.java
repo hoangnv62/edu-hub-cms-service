@@ -7,28 +7,23 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.xssf.streaming.SXSSFSheet;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 
-import java.io.IOException;
-import java.io.OutputStream;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Stream;
-
 /**
- * Lớp cơ sở cho việc xuất Excel dạng streaming sử dụng Apache POI SXSSF.
+ * Lớp cơ sở chứa logic dùng chung cho việc xuất Excel (SXSSF streaming).
  * <p>
- * Lớp con định nghĩa tiêu đề cột và cách ghi từng dòng dữ liệu.
+ * Lớp con định nghĩa tiêu đề cột, cách ghi từng dòng, và độ rộng cột.
  * Việc tạo style được uỷ quyền cho {@link ExcelHeaderStyleProvider} (SRP).
- * Lớp con có thể ghi đè các hook method để tuỳ chỉnh hành vi (OCP).
+ * <p>
+ * Không chứa method export — logic export nằm ở {@link BatchExcelExporter}
+ * và {@link StreamingExcelExporter}.
  *
  * @param <T> kiểu dữ liệu của mỗi dòng
  */
 @Slf4j
-public abstract class BaseExcelExporter<T> implements ExcelExporter<T> {
+public abstract class BaseExcelExporter<T> {
 
-    private static final int DEFAULT_WINDOW_SIZE = 500;
+    protected static final int DEFAULT_WINDOW_SIZE = 500;
 
     private final ExcelHeaderStyleProvider headerStyleProvider;
-    private int[] maxColumnWidths;
 
     protected BaseExcelExporter() {
         this.headerStyleProvider = new DefaultHeaderStyleProvider();
@@ -39,7 +34,7 @@ public abstract class BaseExcelExporter<T> implements ExcelExporter<T> {
     }
 
     /**
-     * Tên các cột tiêu đề cho dòng đầu tiên.
+     * Tên các cột tiêu đề (bao gồm cả STT nếu cần).
      */
     protected abstract String[] getHeaders();
 
@@ -51,59 +46,77 @@ public abstract class BaseExcelExporter<T> implements ExcelExporter<T> {
     }
 
     /**
-     * Ghi một đối tượng dữ liệu vào dòng. Sử dụng {@code row.createCell(index)} để điền dữ liệu.
+     * Ghi một đối tượng dữ liệu vào dòng.
+     *
+     * @param item     đối tượng dữ liệu
+     * @param row      dòng Excel
+     * @param rowIndex số thứ tự dòng (bắt đầu từ 1), dùng cho cột STT nếu cần
      */
-    protected abstract void writeRow(T item, Row row);
+    protected abstract void writeRow(T item, Row row, int rowIndex);
+
+    /**
+     * Độ rộng các cột (đơn vị: số ký tự).
+     * Mặc định tính từ độ dài text header. Ghi đè để tuỳ chỉnh.
+     */
+    protected int[] getColumnWidths() {
+        String[] headers = getHeaders();
+        int[] widths = new int[headers.length];
+        for (int i = 0; i < headers.length; i++) {
+            widths[i] = headers[i].length();
+        }
+        return widths;
+    }
 
     /**
      * Hook được gọi sau khi tạo sheet nhưng trước khi ghi bất kỳ dòng nào.
-     * Ghi đè để thêm cấu hình cho sheet.
      */
     protected void onSheetCreated(SXSSFSheet sheet) {
         // mặc định: không làm gì
     }
 
     /**
-     * Hook được gọi sau khi ghi xong tất cả dữ liệu nhưng trước khi flush workbook.
-     * Ghi đè để xử lý sau (ví dụ: dòng tổng hợp, công thức).
+     * Ghi giá trị String vào cell, tự động xử lý null thành chuỗi rỗng.
      */
-    protected void onDataWritten(SXSSFSheet sheet, List<T> data) {
-        // mặc định: không làm gì
+    protected void setCellValue(Row row, int index, String value) {
+        row.createCell(index).setCellValue(value != null ? value : "");
     }
 
-    @Override
-    public void export(List<T> data, OutputStream outputStream) throws IOException {
-        try (SXSSFWorkbook workbook = new SXSSFWorkbook(DEFAULT_WINDOW_SIZE)) {
-            SXSSFSheet sheet = initSheet(workbook);
-
-            writeDataRows(sheet, data);
-            onDataWritten(sheet, data);
-            applyColumnWidths(sheet);
-
-            workbook.write(outputStream);
-        }
+    /**
+     * Ghi giá trị Number vào cell, tự động xử lý null thành 0.
+     */
+    protected void setCellValue(Row row, int index, Number value) {
+        row.createCell(index).setCellValue(value != null ? value.doubleValue() : 0);
     }
 
-    @Override
-    public void export(Stream<T> dataStream, OutputStream outputStream) throws IOException {
-        try (SXSSFWorkbook workbook = new SXSSFWorkbook(DEFAULT_WINDOW_SIZE)) {
-            SXSSFSheet sheet = initSheet(workbook);
-
-            writeDataRows(sheet, dataStream);
-            applyColumnWidths(sheet);
-
-            workbook.write(outputStream);
-        }
-    }
-
-    private SXSSFSheet initSheet(SXSSFWorkbook workbook) {
+    /**
+     * Tạo sheet với header row.
+     */
+    protected SXSSFSheet initSheet(SXSSFWorkbook workbook) {
         SXSSFSheet sheet = workbook.createSheet(getSheetName());
-        maxColumnWidths = new int[getHeaders().length];
         onSheetCreated(sheet);
 
         CellStyle headerStyle = headerStyleProvider.createHeaderStyle(workbook);
         writeHeaderRow(sheet, headerStyle);
         return sheet;
+    }
+
+    /**
+     * Ghi một dòng dữ liệu.
+     */
+    protected void writeDataRow(SXSSFSheet sheet, T item, int rowIndex) {
+        Row row = sheet.createRow(rowIndex);
+        writeRow(item, row, rowIndex);
+    }
+
+    /**
+     * Áp dụng độ rộng cột từ {@link #getColumnWidths()}.
+     */
+    protected void applyColumnWidths(SXSSFSheet sheet) {
+        int[] columnWidths = getColumnWidths();
+        for (int i = 0; i < columnWidths.length; i++) {
+            int width = (columnWidths[i] + 3) * 256;
+            sheet.setColumnWidth(i, Math.min(width, 255 * 256));
+        }
     }
 
     private void writeHeaderRow(SXSSFSheet sheet, CellStyle headerStyle) {
@@ -113,52 +126,6 @@ public abstract class BaseExcelExporter<T> implements ExcelExporter<T> {
             Cell cell = headerRow.createCell(i);
             cell.setCellValue(headers[i]);
             cell.setCellStyle(headerStyle);
-        }
-        trackColumnWidths(headerRow);
-    }
-
-    private void writeDataRows(SXSSFSheet sheet, List<T> data) {
-        int rowIndex = 1;
-        for (T item : data) {
-            Row row = sheet.createRow(rowIndex++);
-            writeRow(item, row);
-            trackColumnWidths(row);
-        }
-    }
-
-    private void writeDataRows(SXSSFSheet sheet, Stream<T> dataStream) {
-        AtomicInteger rowIndex = new AtomicInteger(1);
-        dataStream.forEach(item -> {
-            Row row = sheet.createRow(rowIndex.getAndIncrement());
-            writeRow(item, row);
-            trackColumnWidths(row);
-        });
-    }
-
-    /**
-     * Theo dõi độ rộng tối đa của từng cột dựa trên nội dung thực tế,
-     * thay vì dùng autoSizeColumn (chỉ tính trên các dòng còn trong memory window).
-     */
-    private void trackColumnWidths(Row row) {
-        for (int i = 0; i < maxColumnWidths.length; i++) {
-            Cell cell = row.getCell(i);
-            if (cell != null) {
-                int length = cell.toString().length();
-                if (length > maxColumnWidths[i]) {
-                    maxColumnWidths[i] = length;
-                }
-            }
-        }
-    }
-
-    /**
-     * Áp dụng độ rộng cột dựa trên dữ liệu đã theo dõi.
-     * Mỗi đơn vị = 1/256 ký tự, thêm padding 3 ký tự, giới hạn tối đa 255 ký tự (giới hạn Excel).
-     */
-    private void applyColumnWidths(SXSSFSheet sheet) {
-        for (int i = 0; i < maxColumnWidths.length; i++) {
-            int width = (maxColumnWidths[i] + 3) * 256;
-            sheet.setColumnWidth(i, Math.min(width, 255 * 256));
         }
     }
 }

@@ -1,5 +1,6 @@
 package vn.edu_hub.service.service;
 
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.transaction.Transactional;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -13,6 +14,12 @@ import vn.edu_hub.service.dto.request.CreateUserRequestDTO;
 import vn.edu_hub.service.dto.response.UserResponseDTO;
 import vn.edu_hub.service.exception.BusinessException;
 import vn.edu_hub.service.repository.UserRepository;
+import vn.edu_hub.service.service.dataIO.exporter.UserExcelExporter;
+import vn.edu_hub.service.service.dataIO.exporter.core.ExcelHttpExporter;
+
+import java.io.IOException;
+import java.util.List;
+import java.util.stream.Stream;
 
 @Service
 @Transactional
@@ -37,6 +44,11 @@ public class UserService {
         return convertToDTO(user);
     }
 
+    public UserResponseDTO getUserById(Long id) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND,"Không tìm thấy người dùng"));
+        return convertToDTO(user);
+    }
     private UserResponseDTO convertToDTO(User user) {
         return UserResponseDTO.builder()
                 .id(user.getId())
@@ -44,5 +56,17 @@ public class UserService {
                 .fullName(user.getFullName())
                 .role(Authorities.find(user.getRole()).name())
                 .build();
+    }
+
+    public void exportUsers(HttpServletResponse response) {
+        UserExcelExporter exporter = new UserExcelExporter();
+        ExcelHttpExporter httpExporter = new ExcelHttpExporter();
+        Stream<UserResponseDTO> users = userRepository.findAllWithStream()
+                .map(this::convertToDTO);
+        try {
+            httpExporter.export(exporter, users, "users.xlsx", response);
+        } catch (IOException e) {
+            throw new BusinessException(ApiResponseCode.INTERNAL_SERVER_ERROR, e.getMessage());
+        }
     }
 }

@@ -29,7 +29,7 @@ spring:
         completions-path: /v1/chat/completions
 jhipster:
   cors:
-    allowed-origins: "http://localhost:3000"
+    allowed-origins: "*"
     allowed-methods: "*"
     allowed-headers: "*"
   security:

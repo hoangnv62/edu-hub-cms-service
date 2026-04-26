@@ -2,14 +2,14 @@ package vn.edu_hub.service.service.dataIO.exporter;
 
 import org.apache.poi.ss.usermodel.Row;
 import vn.edu_hub.service.dto.response.UserResponseDTO;
-import vn.edu_hub.service.service.dataIO.exporter.core.BaseExcelExporter;
+import vn.edu_hub.service.service.dataIO.exporter.core.StreamingExcelExporter;
 
 /**
  * Exporter xuất danh sách người dùng ra file Excel.
  */
-public class UserExcelExporter extends BaseExcelExporter<UserResponseDTO> {
-
-    private static final String[] HEADERS = {"ID", "Tên đăng nhập", "Họ và tên", "Vai trò"};
+public class UserExcelExporter extends StreamingExcelExporter<UserResponseDTO> {
+    private static final String[] HEADERS = {"STT", "ID", "Tên đăng nhập", "Họ và tên", "Vai trò"};
+    private static final int[] COLUMN_WIDTHS = {5, 10, 20, 25, 15};
 
     @Override
     protected String[] getHeaders() {
@@ -22,10 +22,17 @@ public class UserExcelExporter extends BaseExcelExporter<UserResponseDTO> {
     }
 
     @Override
-    protected void writeRow(UserResponseDTO user, Row row) {
-        row.createCell(0).setCellValue(user.getId());
-        row.createCell(1).setCellValue(user.getUsername());
-        row.createCell(2).setCellValue(user.getFullName());
-        row.createCell(3).setCellValue(user.getRole());
+    protected int[] getColumnWidths() {
+        return COLUMN_WIDTHS;
+    }
+
+    @Override
+    protected void writeRow(UserResponseDTO user, Row row, int rowIndex) {
+        int col = 0;
+        setCellValue(row, col++, rowIndex);
+        setCellValue(row, col++, user.getId());
+        setCellValue(row, col++, user.getUsername());
+        setCellValue(row, col++, user.getFullName());
+        setCellValue(row, col, user.getRole());
     }
 }
