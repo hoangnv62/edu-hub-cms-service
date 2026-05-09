@@ -13,9 +13,9 @@ import java.io.Serializable;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "question_options")
+@Table(name = "answers")
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class QuestionOption extends AbstractAuditingEntity implements Serializable {
+public class Answer extends AbstractAuditingEntity implements Serializable {
     @Serial
     private static final long serialVersionUID = 1L;
 

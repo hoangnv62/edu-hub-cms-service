@@ -5,16 +5,21 @@ import jakarta.persistence.Embeddable;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
-@Setter
-@Getter
-@Builder
+import java.io.Serializable;
+
 @Embeddable
+@Getter
+@Setter
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@EqualsAndHashCode
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class ClassSubjectPK {
+public class TaskClassPK implements Serializable {
+
+    @Column(name = "task_id", nullable = false)
+    Long taskId;
+
     @Column(name = "class_id", nullable = false)
     Long classId;
-    @Column(name = "subject_id", nullable = false)
-    Long subjectId;
 }

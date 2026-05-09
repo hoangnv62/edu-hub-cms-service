@@ -32,6 +32,7 @@ import vn.edu_hub.service.exception.InternalException;
 import vn.edu_hub.service.utils.CommonUtils;
 
 import java.nio.file.AccessDeniedException;
+import java.time.format.DateTimeParseException;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -153,6 +154,18 @@ public class GlobalExceptionHandler extends Throwable {
         String desc = ex.getMessageDescription() != null ? ex.getMessageDescription()
                 : CommonUtils.getMessage(messageSource, request, ex.getMessage());
         return new ApiErrorResponse(ex.getCode(), ex.getMessage(), desc);
+    }
+
+    /**
+     * 400 – Sai định dạng ngày/giờ khi parse thủ công
+     */
+    @ExceptionHandler(DateTimeParseException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ResponseBody
+    public ApiErrorResponse handleDateTimeParseException(DateTimeParseException e) {
+        log.error("handleDateTimeParseException(): {}", ExceptionUtils.getStackTrace(e));
+        return new ApiErrorResponse(ApiResponseCode.BAD_REQUEST.getCode(),
+                ApiResponseCode.BAD_REQUEST.getError(), "Định dạng ngày/giờ không hợp lệ: " + e.getParsedString());
     }
 
     /**

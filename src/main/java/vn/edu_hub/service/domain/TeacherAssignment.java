@@ -14,7 +14,7 @@ import java.io.Serializable;
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "teacher_assignments", uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"teacher_id", "subject_id", "class_id"})
+        @UniqueConstraint(columnNames = {"teacher_id", "class_id"})
 })
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class TeacherAssignment extends AbstractAuditingEntity implements Serializable {
@@ -27,9 +27,6 @@ public class TeacherAssignment extends AbstractAuditingEntity implements Seriali
 
     @Column(name = "teacher_id", nullable = false)
     Long teacherId;
-
-    @Column(name = "subject_id", nullable = false)
-    Long subjectId;
 
     @Column(name = "class_id", nullable = false)
     Long classId;

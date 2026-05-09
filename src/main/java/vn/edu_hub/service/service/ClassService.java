@@ -10,8 +10,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.edu_hub.service.constants.ApiResponseCode;
 import vn.edu_hub.service.constants.GradeLeverEnum;
-import vn.edu_hub.service.domain.ClassSubject;
-import vn.edu_hub.service.domain.ClassSubjectPK;
 import vn.edu_hub.service.domain.Classes;
 import vn.edu_hub.service.dto.request.ClassRequestDTO;
 import vn.edu_hub.service.dto.response.ClassDetailResponseDTO;
@@ -19,8 +17,6 @@ import vn.edu_hub.service.dto.response.ClassResponseDTO;
 import vn.edu_hub.service.dto.response.CommonResponseDTO;
 import vn.edu_hub.service.exception.BusinessException;
 import vn.edu_hub.service.repository.ClassRepository;
-import vn.edu_hub.service.repository.ClassSubjectRepository;
-import vn.edu_hub.service.repository.SubjectRepository;
 import vn.edu_hub.service.utils.ResponseUtils;
 
 @Service
@@ -29,8 +25,6 @@ import vn.edu_hub.service.utils.ResponseUtils;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class ClassService {
     ClassRepository classRepository;
-    ClassSubjectRepository classSubjectRepository;
-    SubjectRepository subjectRepository;
 
     public CommonResponseDTO create(ClassRequestDTO request, Long currentUserId) {
         if (classRepository.existsByNameIgnoreCaseAndCreatedBy(request.name(), currentUserId)) {
@@ -68,15 +62,14 @@ public class ClassService {
         if (!classRepository.existsById(classId)) {
             throw new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND, "Lớp học không tồn tại");
         }
-        classSubjectRepository.deleteByIdClassId(classId);
         classRepository.deleteById(classId);
         return ResponseUtils.success();
     }
 
-    public ClassDetailResponseDTO getDetail(Long id) {
+    public ClassResponseDTO getDetail(Long id) {
         Classes classes = classRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND, "Không tìm thấy lớp học"));
-        return ClassDetailResponseDTO.builder()
+        return ClassResponseDTO.builder()
                 .id(id)
                 .name(classes.getName())
                 .description(classes.getDescription())
@@ -85,28 +78,8 @@ public class ClassService {
 
     public Page<@NonNull ClassResponseDTO> getAll(Long userId, String keyword, String grade, Pageable pageable) {
         GradeLeverEnum gradeLever = GradeLeverEnum.find(grade);
-        return classRepository.searchByCriterial(userId, keyword, gradeLever.getValue(), pageable)
+        Integer gradeValue = gradeLever != null ? gradeLever.getValue() : null;
+        return classRepository.searchByCriterial(userId, keyword, gradeValue, pageable)
                 .map(ClassResponseDTO::convertToDTO);
-    }
-
-    public CommonResponseDTO addSubject(Long classId, Long subjectId) {
-        if (!classRepository.existsById(classId)) {
-            throw new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND, "Không tìm thấy lớp học");
-        }
-        if (!subjectRepository.existsById(subjectId)) {
-            throw new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND, "Không tìm thấy môn học");
-        }
-        ClassSubjectPK id = ClassSubjectPK.builder()
-                .classId(classId)
-                .subjectId(subjectId)
-                .build();
-        if (classSubjectRepository.existsById(id)) {
-            throw new BusinessException(ApiResponseCode.BAD_REQUEST, "Môn học đã tồn tại trong chương trình của lớp");
-        }
-        ClassSubject classSubject = ClassSubject.builder()
-                .id(id)
-                .build();
-        classSubjectRepository.save(classSubject);
-        return ResponseUtils.success();
     }
 }

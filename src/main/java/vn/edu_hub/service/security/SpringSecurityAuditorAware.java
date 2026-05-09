@@ -6,7 +6,7 @@ import vn.edu_hub.service.constants.ConstantsAll;
 
 import java.util.Optional;
 
-@Component
+@Component("springSecurityAuditorAware")
 public class SpringSecurityAuditorAware implements AuditorAware<Long> {
 
     @Override

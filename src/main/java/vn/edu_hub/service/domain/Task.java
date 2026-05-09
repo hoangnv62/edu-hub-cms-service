@@ -20,23 +20,11 @@ public class Task extends AbstractAuditingEntity implements Serializable {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long id;
 
-    @Column(name = "subject_id", nullable = false)
-    Long subjectId;
-
-    @Column(name = "class_id", nullable = false)
-    Long classId;
-
-    @Column(name = "teacher_id", nullable = false)
-    Long teacherId;
-
-    @Column(name = "title", nullable = false)
-    String title;
+    @Column(name = "name", nullable = false)
+    String name;
 
     @Column(name = "description")
     String description;
-
-    @Column(name = "due_date")
-    Instant dueDate;
 
     @Column(name = "type")
     Integer type;

@@ -24,20 +24,11 @@ public class StudentAnswer extends AbstractAuditingEntity implements Serializabl
     @Column(name = "id")
     Long id;
 
-    @Column(name = "submission_id", nullable = false)
-    Long submissionId;
-
     @Column(name = "question_id", nullable = false)
     Long questionId;
 
-    @Column(name = "selected_option_id")
-    Long selectedOptionId;
-
-    @Column(name = "answer_text")
-    String answerText;
-
-    @Column(name = "file_url")
-    String fileUrl;
+    @Column(name = "selected_answer_id")
+    Long selectedAnswerId;
 
     @Column(name = "score", nullable = false)
     Float score;

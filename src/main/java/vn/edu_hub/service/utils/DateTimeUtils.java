@@ -6,7 +6,6 @@ import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 import java.util.Locale;
-
 public class DateTimeUtils {
     private static final String DATE_TIME_FORMAT = "yyyy-MM-dd HH:mm:ss";
     private static final String DATE_TIME_2_FORMAT = "yyyy-MM-dd HH:mm";
@@ -66,5 +65,10 @@ public class DateTimeUtils {
 
     public static Instant getStartOfMonth(int year, int month) {
         return LocalDateTime.of(year, month, 1, 0, 0, 0).atZone(zoneId).toInstant();
+    }
+
+    public static Instant toInstant(String dateTimeString) {
+        if (StringUtils.isBlank(dateTimeString)) return null;
+        return LocalDateTime.parse(dateTimeString, dateTimeFormatter).atZone(zoneId).toInstant();
     }
 }

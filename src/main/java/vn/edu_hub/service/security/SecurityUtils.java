@@ -46,7 +46,7 @@ public final class SecurityUtils {
 
     public static Optional<Long> getCurrentUserIdLogin() {
         SecurityContext securityContext = SecurityContextHolder.getContext();
-        return Optional.of(Objects.requireNonNull(securityContext.getAuthentication()).getAuthorities()) // getAuthorities(): tập hợp quyền ((GrantedAuthority)) của người dùng
+        return Optional.of(Objects.requireNonNull(securityContext.getAuthentication()))
                 .map(auth -> {
                     if (auth instanceof AuthenticationToken authenticationToken) {
                         return authenticationToken.getUserId();

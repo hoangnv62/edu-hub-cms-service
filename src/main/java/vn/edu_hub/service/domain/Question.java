@@ -22,11 +22,12 @@ public class Question extends AbstractAuditingEntity implements Serializable {
     @Column(name = "task_id")
     Long taskId;
 
+    @Column(name = "position", nullable = false)
+    Integer position;
+
     @Column(name = "content", nullable = false)
     String content;
 
-    @Column(name = "max_score", nullable = false)
-    Float maxScore = 1f;
-
-    Integer type;
+    @Column(name = "score", nullable = false)
+    Float score = 1f;
 }

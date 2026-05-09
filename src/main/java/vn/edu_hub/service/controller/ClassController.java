@@ -10,8 +10,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-import vn.edu_hub.service.dto.request.AddSubjectRequestDTO;
 import vn.edu_hub.service.dto.request.ClassRequestDTO;
+import vn.edu_hub.service.dto.response.ClassDetailResponseDTO;
 import vn.edu_hub.service.dto.response.ClassResponseDTO;
 import vn.edu_hub.service.dto.response.CommonResponseDTO;
 import vn.edu_hub.service.security.CurrentUserId;
@@ -25,6 +25,10 @@ import vn.edu_hub.service.service.ClassService;
 public class ClassController {
     ClassService classService;
 
+    @GetMapping("/{id}")
+    public ResponseEntity<@NonNull ClassResponseDTO> getClass(@PathVariable Long id){
+        return ResponseEntity.ok(classService.getDetail(id));
+    }
     @PostMapping
     public ResponseEntity<@NonNull CommonResponseDTO> create(
             @Valid @NonNull @RequestBody ClassRequestDTO request,
@@ -54,9 +58,4 @@ public class ClassController {
         return ResponseEntity.ok(classService.getAll(currentUserId, keyword, gradeLevel, pageable));
     }
 
-    @PostMapping("/{id}/add-subject")
-    public ResponseEntity<@NonNull CommonResponseDTO> addSubject(
-            @PathVariable Long id, @RequestBody @Valid AddSubjectRequestDTO requestDTO) {
-        return ResponseEntity.ok(classService.addSubject(id, requestDTO.subjectId()));
-    }
 }
