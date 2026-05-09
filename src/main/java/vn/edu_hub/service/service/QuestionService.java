@@ -1,8 +1,11 @@
 package vn.edu_hub.service.service;
 
 import lombok.AccessLevel;
+import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.edu_hub.service.constants.ApiResponseCode;
@@ -11,7 +14,9 @@ import vn.edu_hub.service.domain.Question;
 import vn.edu_hub.service.dto.request.AnswerRequestDTO;
 import vn.edu_hub.service.dto.request.QuestionRequestDTO;
 import vn.edu_hub.service.dto.request.SaveQuestionsRequestDTO;
+import vn.edu_hub.service.dto.response.AnswerResponseDTO;
 import vn.edu_hub.service.dto.response.CommonResponseDTO;
+import vn.edu_hub.service.dto.response.QuestionResponseDTO;
 import vn.edu_hub.service.exception.BusinessException;
 import vn.edu_hub.service.repository.AnswerRepository;
 import vn.edu_hub.service.repository.QuestionRepository;
@@ -30,6 +35,29 @@ public class QuestionService {
     QuestionRepository questionRepository;
     AnswerRepository answerRepository;
     TaskRepository taskRepository;
+
+    public Page<@NonNull QuestionResponseDTO> getQuestions(Long taskId, Pageable pageable) {
+        Page<@NonNull Question> questions = questionRepository.findByTaskId(taskId, pageable);
+        List<Long> questionIds = questions.getContent().stream().map(Question::getId).toList();
+        List<Answer> answers = answerRepository.findByQuestionIdIn(questionIds);
+        Map<Long, List<AnswerResponseDTO>> answersMap = answers.stream()
+                .collect(Collectors.groupingBy(
+                        Answer::getQuestionId,
+                        Collectors.mapping(answer -> AnswerResponseDTO.builder()
+                                        .id(answer.getId())
+                                        .content(answer.getContent())
+                                        .isCorrect(answer.isCorrect())
+                                        .label(answer.getLabel())
+                                        .build(),
+                                Collectors.toList())));
+        return questions.map(question -> QuestionResponseDTO.builder()
+                    .id(question.getId())
+                    .position(question.getPosition())
+                    .content(question.getContent())
+                    .score(question.getScore())
+                    .answers(answersMap.get(question.getId()))
+                    .build());
+    }
 
     public CommonResponseDTO saveQuestions(Long taskId, SaveQuestionsRequestDTO requestDTO) {
         if (!taskRepository.existsById(taskId)) {
@@ -93,7 +121,7 @@ public class QuestionService {
     }
 
     private List<Long> computeAnswerDeletions(List<QuestionRequestDTO> questions,
-                                               Map<Long, List<Answer>> dbAnswersByQuestionId) {
+                                              Map<Long, List<Answer>> dbAnswersByQuestionId) {
         return questions.stream()
                 .flatMap(dto -> {
                     Set<Long> incomingIds = dto.answers().stream()
@@ -108,7 +136,7 @@ public class QuestionService {
     }
 
     private List<Answer> computeAnswerUpserts(List<QuestionRequestDTO> questions,
-                                               Map<Long, List<Answer>> dbAnswersByQuestionId) {
+                                              Map<Long, List<Answer>> dbAnswersByQuestionId) {
         return questions.stream()
                 .flatMap(dto -> {
                     Map<Long, Answer> dbAnswerMap = dbAnswersByQuestionId
