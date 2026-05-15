@@ -8,4 +8,8 @@ public interface TaskProjection {
     String getDescription();
     Integer getType();
     Integer getAssignedClassCount();
+    Integer getStatus();
+    Float getAvgScore();
+    Instant getDateCreated();
+    Instant getDueDate();
 }

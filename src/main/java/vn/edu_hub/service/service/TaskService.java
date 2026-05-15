@@ -7,6 +7,7 @@ import lombok.experimental.FieldDefaults;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import vn.edu_hub.service.constants.ApiResponseCode;
+import vn.edu_hub.service.constants.CommonStatusEnum;
 import vn.edu_hub.service.constants.TaskTypeEnum;
 import vn.edu_hub.service.domain.Task;
 import vn.edu_hub.service.domain.TaskClass;
@@ -16,6 +17,7 @@ import vn.edu_hub.service.dto.request.TaskClassRequestDTO;
 import vn.edu_hub.service.dto.request.TaskRequestDTO;
 import vn.edu_hub.service.dto.response.CommonResponseDTO;
 import vn.edu_hub.service.dto.response.TaskResponseDTO;
+import vn.edu_hub.service.dto.validation.TaskType;
 import vn.edu_hub.service.exception.BusinessException;
 import vn.edu_hub.service.repository.TaskClassRepository;
 import vn.edu_hub.service.repository.TaskRepository;
@@ -36,10 +38,12 @@ public class TaskService {
     TaskRepository taskRepository;
     TaskClassRepository taskClassRepository;
 
-    public Page<@NonNull TaskResponseDTO> searchByCriterial(String keyword, String dateFrom, String dateTo, Long currentUserId, Pageable pageable) {
+    public Page<@NonNull TaskResponseDTO> searchByCriterial(String keyword, String dateFrom, String dateTo, String type, Long currentUserId, Pageable pageable) {
         Instant from = DateTimeUtils.toInstantStart(dateFrom);
         Instant to = DateTimeUtils.toInstantEnd(dateTo);
-        return taskRepository.searchByCriterial(keyword, from, to, currentUserId, pageable)
+        TaskTypeEnum taskType = TaskTypeEnum.find(type);
+        Integer taskTypeValue = taskType != null ? taskType.getValue() : null;
+        return taskRepository.searchByCriterial(keyword, from, to, taskTypeValue, currentUserId, pageable)
                 .map(this::convertToDTO);
     }
 
@@ -51,6 +55,8 @@ public class TaskService {
                 .name(request.name())
                 .description(request.description())
                 .type(TaskTypeEnum.find(request.type()).getValue())
+                .dueTime(DateTimeUtils.toInstant(request.dueDate()))
+                .status(CommonStatusEnum.ACTIVE.getValue())
                 .build();
         taskRepository.save(task);
         return ResponseUtils.success();
@@ -64,6 +70,7 @@ public class TaskService {
         }
         task.setName(request.name());
         task.setDescription(request.description());
+        task.setDueTime(DateTimeUtils.toInstant(request.dueDate()));
         taskRepository.save(task);
         return ResponseUtils.success();
     }
@@ -97,12 +104,28 @@ public class TaskService {
         taskRepository.deleteByIdIn(ids);
     }
 
+    public CommonResponseDTO swapStatus(Long taskId) {
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND, "Không tìm thấy bài tập"));
+        Integer newStatus = task.getStatus() == CommonStatusEnum.ACTIVE.getValue()
+                ? CommonStatusEnum.INACTIVE.getValue()
+                : CommonStatusEnum.ACTIVE.getValue();
+        task.setStatus(newStatus);
+        taskRepository.save(task);
+        return ResponseUtils.success();
+    }
+
     private TaskResponseDTO convertToDTO(TaskProjection projection) {
         return TaskResponseDTO.builder()
                 .id(projection.getId())
                 .name(projection.getName())
                 .description(projection.getDescription())
                 .assignedClassCount(projection.getAssignedClassCount())
+                .status(projection.getStatus() != null ? CommonStatusEnum.find(projection.getStatus()).name() : null)
+                .avgScore(projection.getAvgScore())
+                .type(projection.getType() != null ? TaskTypeEnum.find(projection.getType()).name() : null)
+                .dateCreated(projection.getDateCreated() != null ? projection.getDateCreated().toEpochMilli() : null)
+                .dueDate(projection.getDueDate() != null ? projection.getDueDate().toEpochMilli() : null)
                 .build();
     }
 }

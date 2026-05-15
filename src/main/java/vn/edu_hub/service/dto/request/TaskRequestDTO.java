@@ -1,6 +1,7 @@
 package vn.edu_hub.service.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
+import vn.edu_hub.service.dto.validation.MyDateTime;
 import vn.edu_hub.service.dto.validation.TaskType;
 
 public record TaskRequestDTO(
@@ -10,7 +11,10 @@ public record TaskRequestDTO(
 
         @NotBlank(message= "Loại bài tập không được để trống")
         @TaskType(message = "Loại bài tập không hợp lệ")
-        String type
+        String type,
+        @NotBlank(message = "Thời gian hết hạn không được để trống")
+        @MyDateTime(message = "Thời gian hết hạn không hợp lệ")
+        String dueDate
 ) {
 
 }

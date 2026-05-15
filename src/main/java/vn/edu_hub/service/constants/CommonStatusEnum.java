@@ -8,7 +8,7 @@ import java.util.Map;
 
 @Getter
 public enum CommonStatusEnum {
-    ACTIVE(1), INACTIVE(-1);
+    ACTIVE(1), INACTIVE(-1), FINISHED(2);
     private final int value;
 
     // hằng số tĩnh nên chỉ được tạo 1 lần duy nhất

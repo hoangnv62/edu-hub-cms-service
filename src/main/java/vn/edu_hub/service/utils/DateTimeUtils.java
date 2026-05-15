@@ -7,8 +7,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 import java.util.Locale;
 public class DateTimeUtils {
-    private static final String DATE_TIME_FORMAT = "yyyy-MM-dd HH:mm:ss";
-    private static final String DATE_TIME_2_FORMAT = "yyyy-MM-dd HH:mm";
+    private static final String DATE_TIME_FORMAT = "yyyy-MM-dd HH:mm";
     private static final String ZONE_ID_7 = "UTC+07:00";
     private static final String DATE_FORMAT = "dd/MM/yyyy";
 
@@ -19,7 +18,6 @@ public class DateTimeUtils {
 
     public static final DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern(DATE_FORMAT);//được dùng để chuyển đổi qua lại giữa LocalDate và chuỗi ngày tháng có định dạng dd/MM/yyyy.
     public static final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(DATE_TIME_FORMAT);
-    public static final DateTimeFormatter dateTimeFormatter2 = DateTimeFormatter.ofPattern(DATE_TIME_2_FORMAT);
     public static final ZoneId zoneId = ZoneId.of(ZONE_ID_7);
 
     public static LocalDate toLocalDate(Instant instant) {

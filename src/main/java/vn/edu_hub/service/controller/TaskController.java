@@ -32,9 +32,10 @@ public class TaskController {
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) String dateFrom,
             @RequestParam(required = false) String dateTo,
+            @RequestParam(required = false) String type,
             @CurrentUserId Long currentUserId,
             Pageable pageable) {
-        return ResponseEntity.ok(taskService.searchByCriterial(keyword, dateFrom, dateTo, currentUserId, pageable));
+        return ResponseEntity.ok(taskService.searchByCriterial(keyword, dateFrom, dateTo, type,currentUserId, pageable));
     }
 
     @PostMapping
@@ -52,13 +53,15 @@ public class TaskController {
         return ResponseEntity.ok(taskService.update(id, request, currentUserId));
     }
 
-    @DeleteMapping
-    public ResponseEntity<@NonNull Void> deleteByIds(
-            @RequestParam List<Long> ids) {
-        taskService.deleteByIds(ids);
+    @DeleteMapping("/{id}")
+    public ResponseEntity<@NonNull Void> deleteById(@PathVariable Long id) {
+        taskService.deleteByIds(List.of(id));
         return ResponseEntity.noContent().build();
     }
-
+    @PatchMapping("/{taskId}")
+    public ResponseEntity<@NonNull CommonResponseDTO> swapStatus(@PathVariable Long taskId) {
+        return ResponseEntity.ok(taskService.swapStatus(taskId));
+    }
     @PostMapping("/{taskId}/classes")
     public ResponseEntity<@NonNull CommonResponseDTO> assignForClass(
             @PathVariable Long taskId,

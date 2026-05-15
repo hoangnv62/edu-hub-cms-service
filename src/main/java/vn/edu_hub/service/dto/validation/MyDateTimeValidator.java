@@ -12,7 +12,7 @@ public class MyDateTimeValidator implements ConstraintValidator<MyDateTime, Stri
     public boolean isValid(String value, ConstraintValidatorContext context) {
         if (StringUtils.isBlank(value)) return true;
         try {
-            DateTimeUtils.dateTimeFormatter2.parse(value);
+            DateTimeUtils.dateTimeFormatter.parse(value);
             return true;
         } catch (DateTimeParseException e) {
             return false;

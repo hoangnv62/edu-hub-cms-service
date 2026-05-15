@@ -17,4 +17,9 @@ public class TaskResponseDTO {
     String name;
     String description;
     Integer assignedClassCount;
+    String status;
+    Float avgScore;
+    Long dateCreated;
+    Long dueDate;
+    String type;
 }

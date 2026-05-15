@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 import vn.edu_hub.service.constants.ApiResponseCode;
 import vn.edu_hub.service.domain.Answer;
 import vn.edu_hub.service.domain.Question;
+import vn.edu_hub.service.domain.Task;
 import vn.edu_hub.service.dto.request.AnswerRequestDTO;
 import vn.edu_hub.service.dto.request.QuestionRequestDTO;
 import vn.edu_hub.service.dto.request.SaveQuestionsRequestDTO;
@@ -37,6 +38,9 @@ public class QuestionService {
     TaskRepository taskRepository;
 
     public Page<@NonNull QuestionResponseDTO> getQuestions(Long taskId, Pageable pageable) {
+        if(!taskRepository.existsById(taskId)){
+            throw new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND, "Không tìm thấy bài tập");
+        }
         Page<@NonNull Question> questions = questionRepository.findByTaskId(taskId, pageable);
         List<Long> questionIds = questions.getContent().stream().map(Question::getId).toList();
         List<Answer> answers = answerRepository.findByQuestionIdIn(questionIds);
@@ -95,6 +99,10 @@ public class QuestionService {
         if (existingQuestions.isEmpty()) return;
         Map<Long, Question> dbQuestionMap = dbQuestions.stream()
                 .collect(Collectors.toMap(Question::getId, Function.identity()));
+        existingQuestions.forEach(dto -> {
+            if (!dbQuestionMap.containsKey(dto.id()))
+                throw new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND, "Câu hỏi không tồn tại: " + dto.id());
+        });
         List<Question> toUpdate = existingQuestions.stream()
                 .map(dto -> applyQuestionUpdate(dbQuestionMap.get(dto.id()), dto))
                 .toList();
@@ -142,9 +150,13 @@ public class QuestionService {
                     Map<Long, Answer> dbAnswerMap = dbAnswersByQuestionId
                             .getOrDefault(dto.id(), List.of()).stream()
                             .collect(Collectors.toMap(Answer::getId, Function.identity()));
-                    return dto.answers().stream().map(a -> a.id() == null
-                            ? buildAnswer(dto.id(), a)
-                            : applyAnswerUpdate(dbAnswerMap.get(a.id()), a));
+                    return dto.answers().stream().map(a -> {
+                        if (a.id() == null) return buildAnswer(dto.id(), a);
+                        Answer existing = dbAnswerMap.get(a.id());
+                        if (existing == null)
+                            throw new BusinessException(ApiResponseCode.ENTITY_NOT_FOUND, "Câu trả lời không tồn tại: " + a.id());
+                        return applyAnswerUpdate(existing, a);
+                    });
                 })
                 .toList();
     }
@@ -190,10 +202,10 @@ public class QuestionService {
     }
 
     private void validateQuestions(List<QuestionRequestDTO> questions) {
-        Set<Integer> labels = questions.stream()
+        Set<Integer> positions = questions.stream()
                 .map(QuestionRequestDTO::position)
                 .collect(Collectors.toSet());
-        if (labels.size() != questions.size()) {
+        if (positions.size() != questions.size()) {
             throw new BusinessException(ApiResponseCode.BAD_REQUEST, "Vị trí của câu hỏi không được trùng nhau");
         }
 
@@ -209,13 +221,19 @@ public class QuestionService {
         questions.forEach(question -> {
             Set<String> labels = new HashSet<>();
             Set<String> content = new HashSet<>();
-            question.answers().forEach(answer -> {
+            boolean hasCorrect = false;
+            for (AnswerRequestDTO answer : question.answers()) {
                 labels.add(answer.label());
                 content.add(answer.content());
-            });
+                if (answer.isCorrect()) hasCorrect = true;
+            }
             if (labels.size() != question.answers().size() || content.size() != question.answers().size()) {
-                String message = "Danh sách câu trả lời của câu " + question.position() + " không hợp lệ";
-                throw new BusinessException(ApiResponseCode.BAD_REQUEST, message);
+                throw new BusinessException(ApiResponseCode.BAD_REQUEST,
+                        "Danh sách câu trả lời của câu " + question.position() + " không hợp lệ");
+            }
+            if (!hasCorrect) {
+                throw new BusinessException(ApiResponseCode.BAD_REQUEST,
+                        "Câu hỏi " + question.position() + " phải có ít nhất một đáp án đúng");
             }
         });
     }

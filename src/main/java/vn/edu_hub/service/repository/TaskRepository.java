@@ -24,17 +24,28 @@ public interface TaskRepository extends JpaRepository<@NonNull Task, @NonNull Lo
                 SELECT  t.id AS id,
                         t.name AS name,
                         t.description AS description,
-                        t.type AS type
-                     FROM Task t LEFT JOIN TaskClass tc ON t.id = tc.id.taskId
+                        t.type AS type,
+                        t.status AS status,
+                        t.dueTime AS dueDate,
+                        t.dateCreated AS dateCreated,
+                        COUNT(DISTINCT tc.id.classId) AS assignedClassCount,
+                        AVG(s.totalScore) AS avgScore
+                     FROM Task t
+                     LEFT JOIN TaskClass tc ON t.id = tc.id.taskId
+                     LEFT JOIN Submission s ON s.taskId = t.id
                      WHERE (:keyword IS NULL OR :keyword = '' OR t.name LIKE CONCAT('%',:keyword,'%')) AND
-                           (:from IS NULL OR :from = '' OR t.dateCreated >= :from) AND
-                           (:to IS NULL OR :to = '' OR t.dateCreated <= :to) AND
+                           (:from IS NULL OR t.dateCreated >= :from) AND
+                           (:to IS NULL OR t.dateCreated <= :to) AND
+                           (:type IS NULL OR t.type = :type) AND
                            t.createdBy = :currentUserId
+                     GROUP BY t.id, t.name, t.description, t.type, t.dateCreated, t.dateUpdated
+                     ORDER BY t.dateUpdated DESC
             """)
     Page<@NonNull TaskProjection> searchByCriterial(
             @Param("keyword") String keyword,
             @Param("from") Instant from,
             @Param("to") Instant to,
+            @Param("type") Integer type,
             @Param("currentUserId") Long currentUserId,
             Pageable pageable);
 }

@@ -2,19 +2,16 @@ package vn.edu_hub.service.dto.response;
 
 import lombok.*;
 import lombok.experimental.FieldDefaults;
-import vn.edu_hub.service.domain.Task;
-
-import java.util.List;
 
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class ClassDetailResponseDTO {
+public class AssignedTaskResponseDTO {
     Long id;
     String name;
-    String description;
-    Float avgScore;
-    List<AssignedTaskResponseDTO> tasks;
+    Long dueDate;
+    String status;
+    Float completionRate;
 }
