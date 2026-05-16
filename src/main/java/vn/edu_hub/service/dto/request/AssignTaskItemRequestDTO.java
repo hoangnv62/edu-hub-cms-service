@@ -4,11 +4,9 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import vn.edu_hub.service.dto.validation.MyDateTime;
 
-import java.util.List;
-
-public record TaskClassRequestDTO(
-        @NotNull(message = "")
-        List<Long> classIds,
+public record AssignTaskItemRequestDTO(
+        @NotNull(message = "Lớp học không được để trống")
+        Long taskId,
 
         @NotBlank(message = "Hạn nộp bài không được để trống")
         @MyDateTime(message = "Hạn nộp bài không hợp lệ")

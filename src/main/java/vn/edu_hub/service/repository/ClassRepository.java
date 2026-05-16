@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import vn.edu_hub.service.domain.Classes;
+import vn.edu_hub.service.dto.projection.ClassOverviewProjection;
 import vn.edu_hub.service.dto.projection.ClassProjection;
 
 @Repository
@@ -15,6 +16,20 @@ public interface ClassRepository extends JpaRepository<@NonNull Classes, @NonNul
     boolean existsByNameIgnoreCaseAndCreatedBy(String name, Long createdBy);
 
     boolean existsByNameIgnoreCaseAndIdNotAndCreatedBy(String name, Long id, Long createdBy);
+
+    @Query("""
+                SELECT c.id AS id,
+                       COUNT(DISTINCT cs.id.studentId) AS totalStudents,
+                       COUNT(DISTINCT tc.id.taskId) AS totalTasks,
+                       AVG(s.totalScore) AS avgScore
+                FROM Classes c
+                LEFT JOIN ClassStudent cs ON c.id = cs.id.classId
+                LEFT JOIN TaskClass tc ON c.id = tc.id.classId
+                LEFT JOIN Submission s ON s.taskId = tc.id.taskId AND s.studentId = cs.id.studentId
+                WHERE c.id = :id
+                GROUP BY c.id
+            """)
+    ClassOverviewProjection findOverviewById(@Param("id") Long id);
 
     @Query(value = """
             SELECT c.id AS id,

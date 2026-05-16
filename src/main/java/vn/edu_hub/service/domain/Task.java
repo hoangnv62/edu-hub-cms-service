@@ -29,9 +29,6 @@ public class Task extends AbstractAuditingEntity implements Serializable {
     @Column(name = "type", nullable = false)
     Integer type;
 
-    @Column(name = "due_time", nullable = false)
-    Instant dueTime;
-
     @Column(name = "status", nullable = false)
     Integer status;
 }

@@ -2,7 +2,6 @@ package vn.edu_hub.service.dto.response;
 
 import lombok.*;
 import lombok.experimental.FieldDefaults;
-import vn.edu_hub.service.domain.Task;
 
 import java.util.List;
 
@@ -15,6 +14,8 @@ public class ClassDetailResponseDTO {
     Long id;
     String name;
     String description;
+    String grade;
+    Integer numOfStudents;
+    Integer numOfTasks;
     Float avgScore;
-    List<AssignedTaskResponseDTO> tasks;
 }
